@@ -80,7 +80,7 @@
         .toolbar {
             margin-bottom: 15px;
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
             flex-wrap: wrap;
             background: #333;
@@ -148,7 +148,7 @@
             align-items: center;
         }
 
-        .layer-shift-panel, .view-control-panel {
+        .layer-shift-panel {
             background: #3a3a3a;
             padding: 8px;
             border-radius: 6px;
@@ -161,11 +161,15 @@
         .shift-row {
             display: flex;
             gap: 4px;
+            justify-content: center;
+            width: 100%;
         }
         .shift-row button {
-            width: 36px;
-            height: 26px;
+            flex: 1;
+            height: 30px;
             font-weight: bold;
+            font-size: 11px;
+            padding: 2px 4px;
         }
 
         button {
@@ -210,7 +214,7 @@
         .zoom-info {
             font-size: 12px;
             color: #ddd;
-            margin-left: 5px;
+            margin-left: 2px;
         }
     </style>
 </head>
@@ -227,27 +231,41 @@
                 <button id="eraserBtn">消しゴム</button>
                 
                 <!-- サイズ変更ボタン -->
-                <span style="border-left: 1px solid #555; margin: 0 4px; height: 20px; display: inline-block;"></span>
-                <span id="sizeLabel" style="font-size: 12px; color: #ccc;">太さ:</span>
-                <button id="size1Btn" class="active-size">1px</button>
-                <button id="size2Btn">2px</button>
-                <button id="size4Btn">4px</button>
-                <button id="size8Btn">8px</button>
-                <button id="size16Btn">16px</button>
+                <span style="border-left: 1px solid #555; margin: 0 2px; height: 20px; display: inline-block;"></span>
+                <span style="font-size: 11px; color: #ccc;">太さ:</span>
+                <button id="size1Btn" class="active-size">1</button>
+                <button id="size2Btn">2</button>
+                <button id="size4Btn">4</button>
+                <button id="size8Btn">8</button>
+                <button id="size16Btn">16</button>
 
                 <!-- 解像度変更ボタン -->
-                <span style="border-left: 1px solid #555; margin: 0 4px; height: 20px; display: inline-block;"></span>
-                <span style="font-size: 12px; color: #ccc;">解像度:</span>
-                <button id="res64Btn">64x64</button>
-                <button id="res128Btn" class="active-res">128x128</button>
-                <span style="border-left: 1px solid #555; margin: 0 4px; height: 20px; display: inline-block;"></span>
+                <span style="border-left: 1px solid #555; margin: 0 2px; height: 20px; display: inline-block;"></span>
+                <span style="font-size: 11px; color: #ccc;">解像度:</span>
+                <button id="res64Btn">64</button>
+                <button id="res128Btn" class="active-res">128</button>
 
+                <span style="border-left: 1px solid #555; margin: 0 2px; height: 20px; display: inline-block;"></span>
                 <button id="fillBtn">塗りつぶし</button>
                 <button id="pickerBtn">スポイト</button>
                 <button id="undoBtn">↩ 戻る</button>
                 <button id="redoBtn">↪ 進む</button>
                 <button id="clearBtn">全消し</button>
-                <span class="zoom-info" id="zoomText">ズーム: 100%</span>
+
+                <!-- 上部に移動した拡大・縮小・移動コントロール -->
+                <span style="border-left: 1px solid #555; margin: 0 2px; height: 20px; display: inline-block;"></span>
+                <button id="zoomOutBtn" style="background-color:#4a5568;">🔍-</button>
+                <span class="zoom-info" id="zoomText">100%</span>
+                <button id="zoomInBtn" style="background-color:#4a5568;">🔍+</button>
+                <button id="resetViewBtn" style="background-color:#4a5568;">リセット</button>
+                
+                <span style="font-size: 11px; color: #ccc; margin-left:2px;">移動:</span>
+                <button id="panUpBtn" style="background-color:#4a5568;">⬆️</button>
+                <button id="panDownBtn" style="background-color:#4a5568;">⬇️</button>
+                <button id="panLeftBtn" style="background-color:#4a5568;">⬅️</button>
+                <button id="panRightBtn" style="background-color:#4a5568;">➡️</button>
+
+                <span style="border-left: 1px solid #555; margin: 0 2px; height: 20px; display: inline-block;"></span>
                 <input type="file" id="imageLoader" accept="image/*" style="display: none;">
                 <button id="loadImgBtn" style="background-color: #b7791f;">画像読込</button>
                 <button id="saveBtn" style="background-color: #2f855a;">保存</button>
@@ -265,35 +283,14 @@
                     <div class="layer-shift-panel">
                         <div style="font-size: 11px; color: #ccc; margin-bottom: 2px;">選択レイヤーのドット移動</div>
                         <div class="shift-row">
-                            <button id="shiftUpBtn">▲</button>
+                            <button id="shiftUpBtn">▲ 上</button>
                         </div>
                         <div class="shift-row">
-                            <button id="shiftLeftBtn">◀</button>
-                            <button id="shiftRightBtn">▶</button>
+                            <button id="shiftLeftBtn">◀ 左</button>
+                            <button id="shiftRightBtn">右 ▶</button>
                         </div>
                         <div class="shift-row">
-                            <button id="shiftDownBtn">▼</button>
-                        </div>
-                    </div>
-
-                    <!-- 画面・視点コントロールパネル -->
-                    <div class="view-control-panel">
-                        <div style="font-size: 11px; color: #ccc; margin-bottom: 2px;">画面の拡大・縮小・移動</div>
-                        <div class="shift-row">
-                            <button id="zoomOutBtn" style="background-color:#4a5568;">🔍➖ 縮小</button>
-                            <button id="resetViewBtn" style="background-color:#4a5568;">リセット</button>
-                            <button id="zoomInBtn" style="background-color:#4a5568;">🔍➕ 拡大</button>
-                        </div>
-                        <div style="font-size: 10px; color: #aaa; margin-top:2px;">スクロール移動 (4px)</div>
-                        <div class="shift-row">
-                            <button id="panUpBtn">⬆️</button>
-                        </div>
-                        <div class="shift-row">
-                            <button id="panLeftBtn">⬅️</button>
-                            <button id="panRightBtn">➡️</button>
-                        </div>
-                        <div class="shift-row">
-                            <button id="panDownBtn">⬇️</button>
+                            <button id="shiftDownBtn">▼ 下</button>
                         </div>
                     </div>
 
@@ -483,7 +480,7 @@
         function updateTransform() {
             const transformStr = `translate(${panX}px, ${panY}px) scale(${scale})`;
             canvas.style.transform = transformStr;
-            zoomText.textContent = `ズーム: ${Math.round(scale * 100)}%`;
+            zoomText.textContent = `${Math.round(scale * 100)}%`;
         }
 
         function saveState() {
@@ -640,10 +637,10 @@
         shiftRightBtn.addEventListener('click', () => shiftLayer(1, 0));
 
         // 視点移動ボタン（4pxずつ移動）
-        panUpBtn.addEventListener('click', () => { panY += 20; updateTransform(); });
-        panDownBtn.addEventListener('click', () => { panY -= 20; updateTransform(); });
-        panLeftBtn.addEventListener('click', () => { panX += 20; updateTransform(); });
-        panRightBtn.addEventListener('click', () => { panX -= 20; updateTransform(); });
+        panUpBtn.addEventListener('click', () => { panY += 16; updateTransform(); });
+        panDownBtn.addEventListener('click', () => { panY -= 16; updateTransform(); });
+        panLeftBtn.addEventListener('click', () => { panX += 16; updateTransform(); });
+        panRightBtn.addEventListener('click', () => { panX -= 16; updateTransform(); });
 
         zoomInBtn.addEventListener('click', () => {
             scale = Math.min(10, scale * 1.25);
@@ -754,7 +751,7 @@
             }
         });
 
-        // --- タッチイベント（純粋に描画のみにして誤動作を防止） ---
+        // --- タッチイベント ---
         canvasContainer.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 isDrawing = true;
@@ -926,7 +923,6 @@
         });
 
         clearBtn.addEventListener('click', () => {
-            // 遅延を入れてブラウザの処理ブロックを回避し確実にconfirmを動かす
             setTimeout(() => {
                 if (window.confirm(`「${layers[activeLayerIndex].name}」の中身をぜんぶ消しちゃうけどいい？`)) {
                     layers[activeLayerIndex].data = createEmptyGrid(resolution);
