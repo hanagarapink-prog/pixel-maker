@@ -148,7 +148,7 @@
             align-items: center;
         }
 
-        .layer-shift-panel {
+        .layer-shift-panel, .view-control-panel {
             background: #3a3a3a;
             padding: 8px;
             border-radius: 6px;
@@ -247,7 +247,6 @@
                 <button id="undoBtn">↩ 戻る</button>
                 <button id="redoBtn">↪ 進む</button>
                 <button id="clearBtn">全消し</button>
-                <button id="resetViewBtn">視点リセット</button>
                 <span class="zoom-info" id="zoomText">ズーム: 100%</span>
                 <input type="file" id="imageLoader" accept="image/*" style="display: none;">
                 <button id="loadImgBtn" style="background-color: #b7791f;">画像読込</button>
@@ -277,6 +276,27 @@
                         </div>
                     </div>
 
+                    <!-- 画面・視点コントロールパネル -->
+                    <div class="view-control-panel">
+                        <div style="font-size: 11px; color: #ccc; margin-bottom: 2px;">画面の拡大・縮小・移動</div>
+                        <div class="shift-row">
+                            <button id="zoomOutBtn" style="background-color:#4a5568;">🔍➖ 縮小</button>
+                            <button id="resetViewBtn" style="background-color:#4a5568;">リセット</button>
+                            <button id="zoomInBtn" style="background-color:#4a5568;">🔍➕ 拡大</button>
+                        </div>
+                        <div style="font-size: 10px; color: #aaa; margin-top:2px;">スクロール移動 (4px)</div>
+                        <div class="shift-row">
+                            <button id="panUpBtn">⬆️</button>
+                        </div>
+                        <div class="shift-row">
+                            <button id="panLeftBtn">⬅️</button>
+                            <button id="panRightBtn">➡️</button>
+                        </div>
+                        <div class="shift-row">
+                            <button id="panDownBtn">⬇️</button>
+                        </div>
+                    </div>
+
                     <div class="action-buttons">
                         <button id="addLayerBtn" style="width: 100%; background-color: #2b6cb0;">＋ レイヤー追加</button>
                     </div>
@@ -287,7 +307,7 @@
         <!-- 右側：金の額縁ギャラリー -->
         <div style="width: 260px; display: flex; flex-direction: column; gap: 20px;">
             <div style="background: linear-gradient(135deg, #ffd700, #ffaa00, #fff275, #cca100); padding: 10px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center;">
-                <img src="dot_art1.png" alt="こっちこいよ" style="width: 100%; display: block; border-radius: 2px; image-rendering: pixelated;">
+                <img src="dot_art (14).png" alt="こっちこいよ" style="width: 100%; display: block; border-radius: 2px; image-rendering: pixelated;">
                 <div style="font-size: 11px; color: #555; margin-top: 6px; font-family: monospace;">#01 こっちこいよ</div>
             </div>
         </div>
@@ -335,7 +355,15 @@
         const redoBtn = document.getElementById('redoBtn');
         const clearBtn = document.getElementById('clearBtn');
         const resetViewBtn = document.getElementById('resetViewBtn');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
         const zoomText = document.getElementById('zoomText');
+
+        const panUpBtn = document.getElementById('panUpBtn');
+        const panDownBtn = document.getElementById('panDownBtn');
+        const panLeftBtn = document.getElementById('panLeftBtn');
+        const panRightBtn = document.getElementById('panRightBtn');
+
         const saveBtn = document.getElementById('saveBtn');
         const loadImgBtn = document.getElementById('loadImgBtn');
         const imageLoader = document.getElementById('imageLoader');
@@ -364,11 +392,6 @@
         let scale = 1;
         let panX = 0;
         let panY = 0;
-        let isPanning = false;
-        let startX = 0;
-        let startY = 0;
-
-        let initialPinchDistance = null;
 
         let layers = [];
         let activeLayerIndex = 0;
@@ -616,6 +639,21 @@
         shiftLeftBtn.addEventListener('click', () => shiftLayer(-1, 0));
         shiftRightBtn.addEventListener('click', () => shiftLayer(1, 0));
 
+        // 視点移動ボタン（4pxずつ移動）
+        panUpBtn.addEventListener('click', () => { panY += 20; updateTransform(); });
+        panDownBtn.addEventListener('click', () => { panY -= 20; updateTransform(); });
+        panLeftBtn.addEventListener('click', () => { panX += 20; updateTransform(); });
+        panRightBtn.addEventListener('click', () => { panX -= 20; updateTransform(); });
+
+        zoomInBtn.addEventListener('click', () => {
+            scale = Math.min(10, scale * 1.25);
+            updateTransform();
+        });
+        zoomOutBtn.addEventListener('click', () => {
+            scale = Math.max(0.5, scale / 1.25);
+            updateTransform();
+        });
+
         function pickColor(x, y) {
             for (let i = layers.length - 1; i >= 0; i--) {
                 if (!layers[i].visible) continue;
@@ -693,23 +731,14 @@
 
         // --- マウスイベント ---
         canvasContainer.addEventListener('mousedown', (e) => {
-            if (e.button === 1 || e.shiftKey) {
-                isPanning = true;
-                startX = e.clientX - panX;
-                startY = e.clientY - panY;
-                e.preventDefault();
-            } else if (e.button === 0) {
+            if (e.button === 0) {
                 isDrawing = true;
                 handleActionAt(e.clientX, e.clientY, true);
             }
         });
 
         window.addEventListener('mousemove', (e) => {
-            if (isPanning) {
-                panX = e.clientX - startX;
-                panY = e.clientY - startY;
-                updateTransform();
-            } else if (isDrawing) {
+            if (isDrawing) {
                 if (currentTool !== 'fill' && currentTool !== 'picker') {
                     handleActionAt(e.clientX, e.clientY, false);
                 }
@@ -723,25 +752,14 @@
                     saveState();
                 }
             }
-            isPanning = false;
         });
 
-        // --- タッチイベント ---
+        // --- タッチイベント（純粋に描画のみにして誤動作を防止） ---
         canvasContainer.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 isDrawing = true;
                 const touch = e.touches[0];
                 handleActionAt(touch.clientX, touch.clientY, true);
-                e.preventDefault();
-            } else if (e.touches.length === 2) {
-                isDrawing = false;
-                isPanning = true;
-                initialPinchDistance = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                startX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - panX;
-                startY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - panY;
                 e.preventDefault();
             }
         }, { passive: false });
@@ -753,52 +771,17 @@
                     handleActionAt(touch.clientX, touch.clientY, false);
                 }
                 e.preventDefault();
-            } else if (e.touches.length === 2 && isPanning) {
-                const currentDist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-
-                if (initialPinchDistance) {
-                    const zoomFactor = currentDist / initialPinchDistance;
-                    let newScale = scale * (zoomFactor > 1 ? 1.03 : 0.97);
-                    scale = Math.max(0.5, Math.min(10, newScale));
-                }
-
-                const currentCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                const currentCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-                panX = currentCenterX - startX;
-                panY = currentCenterY - startY;
-
-                updateTransform();
-                e.preventDefault();
             }
         }, { passive: false });
 
-        canvasContainer.addEventListener('touchend', (e) => {
+        canvasContainer.addEventListener('touchend', () => {
             if (isDrawing) {
                 isDrawing = false;
                 if (currentTool === 'pen' || currentTool === 'eraser') {
                     saveState();
                 }
             }
-            if (e.touches.length < 2) {
-                isPanning = false;
-                initialPinchDistance = null;
-            }
         });
-
-        canvasContainer.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const zoomIntensity = 0.15;
-            if (e.deltaY < 0) {
-                scale *= (1 + zoomIntensity);
-            } else {
-                scale /= (1 + zoomIntensity);
-            }
-            scale = Math.max(0.5, Math.min(10, scale));
-            updateTransform();
-        }, { passive: false });
 
         resetViewBtn.addEventListener('click', resetView);
 
@@ -943,12 +926,14 @@
         });
 
         clearBtn.addEventListener('click', () => {
-            // スマホでも確実に出るようにwindow.confirmを安全に呼び出し
-            if (window.confirm(`「${layers[activeLayerIndex].name}」の中身をぜんぶ消しちゃうけどいい？`)) {
-                layers[activeLayerIndex].data = createEmptyGrid(resolution);
-                saveState();
-                draw();
-            }
+            // 遅延を入れてブラウザの処理ブロックを回避し確実にconfirmを動かす
+            setTimeout(() => {
+                if (window.confirm(`「${layers[activeLayerIndex].name}」の中身をぜんぶ消しちゃうけどいい？`)) {
+                    layers[activeLayerIndex].data = createEmptyGrid(resolution);
+                    saveState();
+                    draw();
+                }
+            }, 50);
         });
 
         saveBtn.addEventListener('click', () => {
@@ -974,13 +959,9 @@
             });
 
             const dataUrl = exportCanvas.toDataURL('image/png');
-
-            // スマホ（iOS/Android）の場合は長押し保存しやすいように専用モーダルを表示する
-            // PCの場合はそのままダウンロードも試みる
             modalImage.src = dataUrl;
             saveModal.style.display = 'flex';
 
-            // PC向けの自動ダウンロードも一応並行して走らせる
             const link = document.createElement('a');
             link.download = `dot_art_${resolution}x${resolution}.png`;
             link.href = dataUrl;
