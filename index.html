@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ドット絵メーカー (128x128・ギャラリー付き)</title>
+    <title>ドット絵メーカー (64/128切り替え・ギャラリー付き)</title>
     <style>
         body {
             font-family: "M Mamelon", "Rounded Mplus 1c", "Hiragino Maru Gothic ProN", "Meiryo", sans-serif;
@@ -178,6 +178,11 @@
             color: #000;
             font-weight: bold;
         }
+        button.active-res {
+            background-color: #319795;
+            color: #fff;
+            font-weight: bold;
+        }
         input[type="color"] {
             border: none;
             width: 32px;
@@ -201,7 +206,7 @@
 </head>
 <body>
 
-    <h1>✨ ドット絵メーカー (128x128) ✨</h1>
+    <h1 id="mainTitle">✨ ドット絵メーカー (128x128) ✨</h1>
 
     <div class="main-container">
 
@@ -219,6 +224,12 @@
                 <button id="size4Btn">4px</button>
                 <button id="size8Btn">8px</button>
                 <button id="size16Btn">16px</button>
+
+                <!-- 解像度変更ボタン -->
+                <span style="border-left: 1px solid #555; margin: 0 4px; height: 20px; display: inline-block;"></span>
+                <span style="font-size: 12px; color: #ccc;">解像度:</span>
+                <button id="res64Btn">64x64</button>
+                <button id="res128Btn" class="active-res">128x128</button>
                 <span style="border-left: 1px solid #555; margin: 0 4px; height: 20px; display: inline-block;"></span>
 
                 <button id="fillBtn">塗りつぶし</button>
@@ -283,6 +294,7 @@
         const canvasContainer = document.getElementById('canvasContainer');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const mainTitle = document.getElementById('mainTitle');
 
         const colorPicker = document.getElementById('colorPicker');
         const penBtn = document.getElementById('penBtn');
@@ -295,6 +307,9 @@
         const size4Btn = document.getElementById('size4Btn');
         const size8Btn = document.getElementById('size8Btn');
         const size16Btn = document.getElementById('size16Btn');
+
+        const res64Btn = document.getElementById('res64Btn');
+        const res128Btn = document.getElementById('res128Btn');
 
         const undoBtn = document.getElementById('undoBtn');
         const redoBtn = document.getElementById('redoBtn');
@@ -312,14 +327,13 @@
         const shiftLeftBtn = document.getElementById('shiftLeftBtn');
         const shiftRightBtn = document.getElementById('shiftRightBtn');
 
-        const resolution = 128;
+        let resolution = 128; // 初期値
         const baseSize = 512;  
         let tileSize = baseSize / resolution;
         
         let isDrawing = false;
         let currentTool = 'pen';
         
-        // ペンと消しゴムのサイズを個別に保持する
         let penSize = 1;
         let eraserSize = 1;
 
@@ -338,11 +352,11 @@
         let historyStep = -1;
         const MAX_HISTORY = 20;
 
-        function createEmptyGrid() {
+        function createEmptyGrid(res = resolution) {
             let grid = [];
-            for (let y = 0; y < resolution; y++) {
+            for (let y = 0; y < res; y++) {
                 let row = [];
-                for (let x = 0; x < resolution; x++) {
+                for (let x = 0; x < res; x++) {
                     row.push(null);
                 }
                 grid.push(row);
@@ -355,7 +369,7 @@
                 id: 1,
                 name: "レイヤー 1",
                 visible: true,
-                data: createEmptyGrid()
+                data: createEmptyGrid(resolution)
             }];
             activeLayerIndex = 0;
             history = [];
@@ -365,6 +379,50 @@
             updateLayerUI();
             draw();
             updateSizeButtonsUI();
+            updateResButtonsUI();
+        }
+
+        function changeResolution(newRes) {
+            if (newRes === resolution) return;
+
+            if (!confirm(`解像度を ${newRes}x${newRes} に変更するよ！今の絵は自動で調整されるけど、続ける？`)) {
+                updateResButtonsUI();
+                return;
+            }
+
+            const oldRes = resolution;
+            resolution = newRes;
+            tileSize = baseSize / resolution;
+
+            // 各レイヤーのデータを新しい解像度にリサイズ（簡易サンプリング）
+            layers.forEach(layer => {
+                let newGrid = createEmptyGrid(resolution);
+                for (let y = 0; y < resolution; y++) {
+                    for (let x = 0; x < resolution; x++) {
+                        let srcX = Math.floor(x * (oldRes / resolution));
+                        let srcY = Math.floor(y * (oldRes / resolution));
+                        if (srcX < oldRes && srcY < oldRes) {
+                            newGrid[y][x] = layer.data[srcY][srcX];
+                        }
+                    }
+                }
+                layer.data = newGrid;
+            });
+
+            mainTitle.textContent = `✨ ドット絵メーカー (${resolution}x${resolution}) ✨`;
+            resetView();
+            history = [];
+            historyStep = -1;
+            saveState();
+            updateResButtonsUI();
+            draw();
+        }
+
+        function updateResButtonsUI() {
+            res64Btn.classList.remove('active-res');
+            res128Btn.classList.remove('active-res');
+            if (resolution === 64) res64Btn.classList.add('active-res');
+            if (resolution === 128) res128Btn.classList.add('active-res');
         }
 
         function resetView() {
@@ -511,7 +569,7 @@
 
         function shiftLayer(dx, dy) {
             const currentGrid = layers[activeLayerIndex].data;
-            let newGrid = createEmptyGrid();
+            let newGrid = createEmptyGrid(resolution);
 
             for (let y = 0; y < resolution; y++) {
                 for (let x = 0; x < resolution; x++) {
@@ -668,7 +726,6 @@
             if (toolName === 'fill') fillBtn.classList.add('active-tool');
             if (toolName === 'picker') pickerBtn.classList.add('active-tool');
 
-            // ツール切り替え時にサイズボタンの見た目を現在のツールに合わせる
             updateSizeButtonsUI();
         }
 
@@ -707,6 +764,9 @@
         size4Btn.addEventListener('click', () => setBrushSize(4));
         size8Btn.addEventListener('click', () => setBrushSize(8));
         size16Btn.addEventListener('click', () => setBrushSize(16));
+
+        res64Btn.addEventListener('click', () => changeResolution(64));
+        res128Btn.addEventListener('click', () => changeResolution(128));
 
         undoBtn.addEventListener('click', () => {
             if (historyStep > 0) {
@@ -751,7 +811,7 @@
                     tempCtx.drawImage(img, 0, 0, resolution, resolution);
                     const imgData = tempCtx.getImageData(0, 0, resolution, resolution).data;
 
-                    const newGrid = createEmptyGrid();
+                    const newGrid = createEmptyGrid(resolution);
                     for (let y = 0; y < resolution; y++) {
                         for (let x = 0; x < resolution; x++) {
                             const index = (y * resolution + x) * 4;
@@ -786,7 +846,7 @@
                 id: newId,
                 name: `レイヤー ${newId}`,
                 visible: true,
-                data: createEmptyGrid()
+                data: createEmptyGrid(resolution)
             });
             activeLayerIndex = layers.length - 1;
             updateLayerUI();
@@ -796,7 +856,7 @@
 
         clearBtn.addEventListener('click', () => {
             if (confirm(`「${layers[activeLayerIndex].name}」の中身をぜんぶ消しちゃうけどいい？`)) {
-                layers[activeLayerIndex].data = createEmptyGrid();
+                layers[activeLayerIndex].data = createEmptyGrid(resolution);
                 saveState();
                 draw();
             }
@@ -825,7 +885,7 @@
             });
 
             const link = document.createElement('a');
-            link.download = 'dot_art.png';
+            link.download = `dot_art_${resolution}x${resolution}.png`;
             link.href = exportCanvas.toDataURL('image/png');
             link.click();
         });
