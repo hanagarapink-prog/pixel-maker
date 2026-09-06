@@ -2,247 +2,847 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>お絵描きツール</title>
+    <title>ドット絵メーカー (128x128・ギャラリー付き)</title>
     <style>
-        :root {
-            --bg-color: #f5f6fa;
-            --panel-bg: #ffffff;
-            --text-color: #2f3640;
-            --accent-color: #4cd137;
-            --border-color: #dcdde1;
-        }
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: "M Mamelon", "Rounded Mplus 1c", "Hiragino Maru Gothic ProN", "Meiryo", sans-serif;
+            background: linear-gradient(to bottom, #ffffff 0%, #e4b4d2 100%);
+            background-attachment: fixed;
+            color: #444444;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
             margin: 0;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
         }
         h1 {
-            margin-bottom: 10px;
-            font-size: 1.5rem;
-        }
-        .app-container {
-            display: flex;
-            gap: 20px;
-            background: var(--panel-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            max-width: 1000px;
-            width: 100%;
-        }
-        .toolbar {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            min-width: 150px;
-        }
-        .tool-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .tool-group label {
-            font-size: 0.85rem;
-            font-weight: bold;
-            color: #718093;
-        }
-        button, label.btn-label {
-            padding: 10px 14px;
-            border: 2px solid var(--border-color);
-            background: #ffffff;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-            text-align: center;
-        }
-        button:hover, label.btn-label:hover {
-            border-color: #718093;
-        }
-        button.active {
-            background: var(--text-color);
+            margin-bottom: 15px;
+            font-size: 40px;
             color: #ffffff;
-            border-color: var(--text-color);
+            font-weight: bold;
+            font-family: "M Mamelon", "Rounded Mplus 1c", "Hiragino Maru Gothic ProN", "Meiryo", sans-serif;
+            text-shadow: 
+             -2px -2px 0 #000,  
+              2px -2px 0 #000,
+             -2px  2px 0 #000,
+              2px  2px 0 #000,
+             -3px  0px 0 #000,
+              3px  0px 0 #000,
+              0px -3px 0 #000,
+              0px  3px 0 #000;
+            letter-spacing: 2px;
         }
-        input[type="color"] {
+        
+        .main-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
             width: 100%;
-            height: 40px;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            background: none;
-            padding: 0;
         }
-        .canvas-container {
+
+        .left-area {
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            flex-grow: 1;
         }
-        canvas {
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            background: #ffffff;
+
+        .canvas-container {
+            position: relative;
+            width: 512px;
+            height: 512px;
+            border: 4px solid #555;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            background-color: #ffffff;
+            overflow: hidden;
             cursor: crosshair;
-            touch-action: none;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+        }
+
+        .toolbar {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #333;
+            padding: 10px;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            justify-content: center;
+        }
+
+        .workspace-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .sidebar {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            width: 270px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            box-sizing: border-box;
+        }
+
+        .sidebar h3 {
+            color: #e3e3e3;
+            margin-top: 0;
+            font-size: 16px;
+            border-bottom: 1px solid #555;
+            padding-bottom: 5px;
+        }
+
+        .layer-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #444;
+            padding: 8px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .layer-item.active {
+            border-color: #4a90e2;
+            background: #3a506b;
+        }
+
+        .layer-info {
+            color: #e3e3e3;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .layer-controls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .layer-shift-panel {
+            background: #3a3a3a;
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .shift-row {
+            display: flex;
+            gap: 4px;
+        }
+        .shift-row button {
+            width: 36px;
+            height: 26px;
+            font-weight: bold;
+        }
+
+        button {
+            padding: 6px 10px;
+            background-color: #444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        button.active-tool {
+            background-color: #2b6cb0;
+        }
+        button.active-size {
+            background-color: #d69e2e;
+            color: #000;
+            font-weight: bold;
+        }
+        input[type="color"] {
+            border: none;
+            width: 32px;
+            height: 28px;
+            cursor: pointer;
+            background: none;
+            vertical-align: middle;
         }
         .action-buttons {
+            margin-top: 10px;
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            width: 100%;
+            gap: 8px;
+            flex-wrap: wrap;
         }
-        .action-buttons button {
-            flex: 1;
+        .zoom-info {
+            font-size: 12px;
+            color: #ddd;
+            margin-left: 5px;
         }
     </style>
 </head>
 <body>
 
-    <h1>お絵描きアプリ</h1>
-    <div class="app-container">
-        <!-- ツールバー -->
-        <div class="toolbar">
-            <div class="tool-group">
-                <label>モード</label>
-                <button id="btn-pen" class="active" onclick="setMode('pen')">ペン</button>
-                <button id="btn-eraser" onclick="setMode('eraser')">消しゴム</button>
+    <h1>✨ ドット絵メーカー (128x128) ✨</h1>
+
+    <div class="main-container">
+
+        <div class="left-area">
+            <div class="toolbar">
+                <label>色: <input type="color" id="colorPicker" value="#000000"></label>
+                <button id="penBtn" class="active-tool">ペン</button>
+                <button id="eraserBtn">消しゴム</button>
+                
+                <!-- サイズ変更ボタン -->
+                <span style="border-left: 1px solid #555; margin: 0 4px; height: 20px; display: inline-block;"></span>
+                <span id="sizeLabel" style="font-size: 12px; color: #ccc;">太さ:</span>
+                <button id="size1Btn" class="active-size">1px</button>
+                <button id="size2Btn">2px</button>
+                <button id="size4Btn">4px</button>
+                <button id="size8Btn">8px</button>
+                <button id="size16Btn">16px</button>
+                <span style="border-left: 1px solid #555; margin: 0 4px; height: 20px; display: inline-block;"></span>
+
+                <button id="fillBtn">塗りつぶし</button>
+                <button id="pickerBtn">スポイト</button>
+                <button id="undoBtn">↩ 戻る</button>
+                <button id="redoBtn">↪ 進む</button>
+                <button id="clearBtn">全消し</button>
+                <button id="resetViewBtn">視点リセット</button>
+                <span class="zoom-info" id="zoomText">ズーム: 100%</span>
+                <input type="file" id="imageLoader" accept="image/*" style="display: none;">
+                <button id="loadImgBtn" style="background-color: #b7791f;">画像読込</button>
+                <button id="saveBtn" style="background-color: #2f855a;">保存</button>
             </div>
 
-            <div class="tool-group">
-                <label>線の太さ</label>
-                <button id="size-1" class="active" onclick="setSize(1)">1px (いまのまま)</button>
-                <button id="size-4" onclick="setSize(4)">4px</button>
-                <button id="size-16" onclick="setSize(16)">16px</button>
-            </div>
+            <div class="workspace-row">
+                <div class="canvas-container" id="canvasContainer">
+                    <canvas id="canvas" width="512" height="512"></canvas>
+                </div>
 
-            <div class="tool-group">
-                <label>ペンの色</label>
-                <input type="color" id="color-picker" value="#000000" onchange="setColor(this.value)">
+                <div class="sidebar">
+                    <h3>レイヤー (最大10枚)</h3>
+                    <div id="layerList"></div>
+                    
+                    <div class="layer-shift-panel">
+                        <div style="font-size: 11px; color: #ccc; margin-bottom: 2px;">選択レイヤーのドット移動</div>
+                        <div class="shift-row">
+                            <button id="shiftUpBtn">▲</button>
+                        </div>
+                        <div class="shift-row">
+                            <button id="shiftLeftBtn">◀</button>
+                            <button id="shiftRightBtn">▶</button>
+                        </div>
+                        <div class="shift-row">
+                            <button id="shiftDownBtn">▼</button>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="addLayerBtn" style="width: 100%; background-color: #2b6cb0;">＋ レイヤー追加</button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- キャンバスエリア -->
-        <div class="canvas-container">
-            <canvas id="drawingCanvas" width="600" height="400"></canvas>
-            <div class="action-buttons">
-                <button onclick="clearCanvas()" style="background-color: #ff7675; color: white; border: none;">全消去</button>
-                <button onclick="saveImage()" style="background-color: #55efc4; border: none;">保存</button>
+        <!-- 右側：金の額縁ギャラリー -->
+        <div style="width: 260px; display: flex; flex-direction: column; gap: 20px;">
+            <div style="background: linear-gradient(135deg, #ffd700, #ffaa00, #fff275, #cca100); padding: 10px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center;">
+                <img src="dot_art (14).png" alt="こっちこいよ" style="width: 100%; display: block; border-radius: 2px; image-rendering: pixelated;">
+                <div style="font-size: 11px; color: #555; margin-top: 6px; font-family: monospace;">#01 こっちこいよ</div>
             </div>
         </div>
+
+    </div>
+
+    <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #666; background: rgba(255,255,255,0.6); padding: 5px 15px; border-radius: 10px;">
+        <span>🎀 訪問者数: </span>
+        <span id="visitor-count" style="font-weight: bold; font-family: monospace;">00001</span>
+        <span>人め 🎀</span>
     </div>
 
     <script>
-        const canvas = document.getElementById('drawingCanvas');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
+        const colorPicker = document.getElementById('colorPicker');
+        const penBtn = document.getElementById('penBtn');
+        const eraserBtn = document.getElementById('eraserBtn');
+        const fillBtn = document.getElementById('fillBtn');
+        const pickerBtn = document.getElementById('pickerBtn');
+        
+        const size1Btn = document.getElementById('size1Btn');
+        const size2Btn = document.getElementById('size2Btn');
+        const size4Btn = document.getElementById('size4Btn');
+        const size8Btn = document.getElementById('size8Btn');
+        const size16Btn = document.getElementById('size16Btn');
+
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resetViewBtn = document.getElementById('resetViewBtn');
+        const zoomText = document.getElementById('zoomText');
+        const saveBtn = document.getElementById('saveBtn');
+        const loadImgBtn = document.getElementById('loadImgBtn');
+        const imageLoader = document.getElementById('imageLoader');
+        const layerListDiv = document.getElementById('layerList');
+        const addLayerBtn = document.getElementById('addLayerBtn');
+
+        const shiftUpBtn = document.getElementById('shiftUpBtn');
+        const shiftDownBtn = document.getElementById('shiftDownBtn');
+        const shiftLeftBtn = document.getElementById('shiftLeftBtn');
+        const shiftRightBtn = document.getElementById('shiftRightBtn');
+
+        const resolution = 128;
+        const baseSize = 512;  
+        let tileSize = baseSize / resolution;
+        
         let isDrawing = false;
-        let currentMode = 'pen'; // 'pen' or 'eraser'
-        let currentSize = 1;
-        let currentColor = '#000000';
-        let lastX = 0;
-        let lastY = 0;
+        let currentTool = 'pen';
+        
+        // ペンと消しゴムのサイズを個別に保持する
+        let penSize = 1;
+        let eraserSize = 1;
 
-        // 初期設定
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.lineWidth = currentSize;
-        ctx.strokeStyle = currentColor;
+        let scale = 1;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let startX = 0;
+        let startY = 0;
 
-        // モード変更
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('btn-pen').classList.toggle('active', mode === 'pen');
-            document.getElementById('btn-eraser').classList.toggle('active', mode === 'eraser');
+        let layers = [];
+        let activeLayerIndex = 0;
+        const MAX_LAYERS = 10;
+
+        let history = [];
+        let historyStep = -1;
+        const MAX_HISTORY = 20;
+
+        function createEmptyGrid() {
+            let grid = [];
+            for (let y = 0; y < resolution; y++) {
+                let row = [];
+                for (let x = 0; x < resolution; x++) {
+                    row.push(null);
+                }
+                grid.push(row);
+            }
+            return grid;
         }
 
-        // サイズ変更
-        function setSize(size) {
-            currentSize = size;
-            document.getElementById('size-1').classList.toggle('active', size === 1);
-            document.getElementById('size-4').classList.toggle('active', size === 4);
-            document.getElementById('size-16').classList.toggle('active', size === 16);
+        function initProject() {
+            layers = [{
+                id: 1,
+                name: "レイヤー 1",
+                visible: true,
+                data: createEmptyGrid()
+            }];
+            activeLayerIndex = 0;
+            history = [];
+            historyStep = -1;
+            resetView();
+            saveState();
+            updateLayerUI();
+            draw();
+            updateSizeButtonsUI();
         }
 
-        // 色変更
-        function setColor(color) {
-            currentColor = color;
+        function resetView() {
+            scale = 1;
+            panX = 0;
+            panY = 0;
+            updateTransform();
         }
 
-        // 描画イベント
-        function startDrawing(e) {
-            isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            lastX = (e.clientX || e.touches[0].clientX) - rect.left;
-            lastY = (e.clientY || e.touches[0].clientY) - rect.top;
+        function updateTransform() {
+            const transformStr = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            canvas.style.transform = transformStr;
+            zoomText.textContent = `ズーム: ${Math.round(scale * 100)}%`;
         }
 
-        function draw(e) {
-            if (!isDrawing) return;
-            e.preventDefault();
-
-            const rect = canvas.getBoundingClientRect();
-            const currentX = (e.clientX || e.touches[0].clientX) - rect.left;
-            const currentY = (e.clientY || e.touches[0].clientY) - rect.top;
-
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(currentX, currentY);
-
-            if (currentMode === 'eraser') {
-                ctx.strokeStyle = '#ffffff'; // 消しゴムは白で塗りつぶす
+        function saveState() {
+            history = history.slice(0, historyStep + 1);
+            const stateSnapshot = layers.map(l => ({
+                id: l.id,
+                name: l.name,
+                visible: l.visible,
+                data: l.data.map(row => [...row])
+            }));
+            history.push(stateSnapshot);
+            if (history.length > MAX_HISTORY) {
+                history.shift();
             } else {
-                ctx.strokeStyle = currentColor;
-            }
-
-            ctx.lineWidth = currentSize;
-            ctx.stroke();
-
-            lastX = currentX;
-            lastY = currentY;
-        }
-
-        function stopDrawing() {
-            isDrawing = false;
-        }
-
-        // マウスイベント
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', stopDrawing);
-        canvas.addEventListener('mouseout', stopDrawing);
-
-        // タッチイベント（スマホ・タブレット対応）
-        canvas.addEventListener('touchstart', startDrawing);
-        canvas.addEventListener('touchmove', draw);
-        canvas.addEventListener('touchend', stopDrawing);
-
-        // 全消去
-        function clearCanvas() {
-            if (confirm('キャンバスをクリアしますか？')) {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                historyStep++;
             }
         }
 
-        // 保存
-        function saveImage() {
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            layers.forEach(layer => {
+                if (!layer.visible) return;
+                const gridData = layer.data;
+                for (let y = 0; y < resolution; y++) {
+                    for (let x = 0; x < resolution; x++) {
+                        const color = gridData[y][x];
+                        if (color !== null) {
+                            ctx.fillStyle = color;
+                            ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateLayerUI() {
+            layerListDiv.innerHTML = '';
+            for (let i = layers.length - 1; i >= 0; i--) {
+                const layer = layers[i];
+                const item = document.createElement('div');
+                item.className = 'layer-item' + (i === activeLayerIndex ? ' active' : '');
+                
+                const info = document.createElement('div');
+                info.className = 'layer-info';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = layer.visible;
+                checkbox.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    layer.visible = checkbox.checked;
+                    draw();
+                });
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = layer.name;
+
+                info.appendChild(checkbox);
+                info.appendChild(nameSpan);
+
+                const controls = document.createElement('div');
+                controls.className = 'layer-controls';
+
+                const upBtn = document.createElement('button');
+                upBtn.textContent = '⬆️';
+                upBtn.style.padding = '2px 4px';
+                upBtn.disabled = (i === layers.length - 1);
+                upBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (i < layers.length - 1) {
+                        const temp = layers[i];
+                        layers[i] = layers[i + 1];
+                        layers[i + 1] = temp;
+                        activeLayerIndex = i + 1;
+                        updateLayerUI();
+                        saveState();
+                        draw();
+                    }
+                });
+
+                const downBtn = document.createElement('button');
+                downBtn.textContent = '⬇️';
+                downBtn.style.padding = '2px 4px';
+                downBtn.disabled = (i === 0);
+                downBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (i > 0) {
+                        const temp = layers[i];
+                        layers[i] = layers[i - 1];
+                        layers[i - 1] = temp;
+                        activeLayerIndex = i - 1;
+                        updateLayerUI();
+                        saveState();
+                        draw();
+                    }
+                });
+
+                controls.appendChild(upBtn);
+                controls.appendChild(downBtn);
+
+                if (layers.length > 1) {
+                    const delBtn = document.createElement('button');
+                    delBtn.textContent = '🗑️';
+                    delBtn.style.padding = '2px 4px';
+                    delBtn.style.backgroundColor = '#9b2c2c';
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        layers.splice(i, 1);
+                        if (activeLayerIndex >= layers.length) {
+                            activeLayerIndex = layers.length - 1;
+                        }
+                        updateLayerUI();
+                        saveState();
+                        draw();
+                    });
+                    controls.appendChild(delBtn);
+                }
+
+                item.appendChild(info);
+                item.appendChild(controls);
+
+                item.addEventListener('click', () => {
+                    activeLayerIndex = i;
+                    updateLayerUI();
+                });
+
+                layerListDiv.appendChild(item);
+            }
+        }
+
+        function shiftLayer(dx, dy) {
+            const currentGrid = layers[activeLayerIndex].data;
+            let newGrid = createEmptyGrid();
+
+            for (let y = 0; y < resolution; y++) {
+                for (let x = 0; x < resolution; x++) {
+                    const srcX = x - dx;
+                    const srcY = y - dy;
+                    if (srcX >= 0 && srcX < resolution && srcY >= 0 && srcY < resolution) {
+                        newGrid[y][x] = currentGrid[srcY][srcX];
+                    }
+                }
+            }
+
+            layers[activeLayerIndex].data = newGrid;
+            saveState();
+            draw();
+        }
+
+        shiftUpBtn.addEventListener('click', () => shiftLayer(0, -1));
+        shiftDownBtn.addEventListener('click', () => shiftLayer(0, 1));
+        shiftLeftBtn.addEventListener('click', () => shiftLayer(-1, 0));
+        shiftRightBtn.addEventListener('click', () => shiftLayer(1, 0));
+
+        function pickColor(x, y) {
+            for (let i = layers.length - 1; i >= 0; i--) {
+                if (!layers[i].visible) continue;
+                const color = layers[i].data[y][x];
+                if (color !== null) {
+                    colorPicker.value = color;
+                    setActiveTool('pen');
+                    return;
+                }
+            }
+        }
+
+        function floodFill(startX, startY, targetColor, fillColor) {
+            const currentGrid = layers[activeLayerIndex].data;
+            if (targetColor === fillColor) return;
+            if (currentGrid[startY][startX] !== targetColor) return;
+
+            let queue = [[startX, startY]];
+            while (queue.length > 0) {
+                let [x, y] = queue.pop();
+                if (x < 0 || x >= resolution || y < 0 || y >= resolution) continue;
+                if (currentGrid[y][x] !== targetColor) continue;
+                currentGrid[y][x] = fillColor;
+                queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+            }
+        }
+
+        function getCanvasCoord(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / (tileSize * scale);
+            const y = (e.clientY - rect.top) / (tileSize * scale);
+            return { x: Math.floor(x), y: Math.floor(y) };
+        }
+
+        function handleToolAction(e, isClick = false) {
+            const coord = getCanvasCoord(e);
+            const cx = coord.x;
+            const cy = coord.y;
+
+            if (cx >= 0 && cx < resolution && cy >= 0 && cy < resolution) {
+                const currentGrid = layers[activeLayerIndex].data;
+
+                if (currentTool === 'pen' || currentTool === 'eraser') {
+                    let changed = false;
+                    const size = (currentTool === 'pen') ? penSize : eraserSize;
+                    const half = Math.floor(size / 2);
+                    
+                    for (let dy = 0; dy < size; dy++) {
+                        for (let dx = 0; dx < size; dx++) {
+                            const x = cx + dx - half;
+                            const y = cy + dy - half;
+                            if (x >= 0 && x < resolution && y >= 0 && y < resolution) {
+                                const val = (currentTool === 'pen') ? colorPicker.value : null;
+                                if (currentGrid[y][x] !== val) {
+                                    currentGrid[y][x] = val;
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
+                    if (changed) draw();
+
+                } else if (currentTool === 'fill' && isClick) {
+                    const targetColor = currentGrid[cy][cx];
+                    floodFill(cx, cy, targetColor, colorPicker.value);
+                    saveState();
+                    draw();
+                    isDrawing = false;
+                } else if (currentTool === 'picker' && isClick) {
+                    pickColor(cx, cy);
+                    isDrawing = false;
+                }
+            }
+        }
+
+        canvasContainer.addEventListener('mousedown', (e) => {
+            if (e.button === 1 || e.shiftKey) {
+                isPanning = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+                e.preventDefault();
+            } else if (e.button === 0) {
+                isDrawing = true;
+                handleToolAction(e, true);
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isPanning) {
+                panX = e.clientX - startX;
+                panY = e.clientY - startY;
+                updateTransform();
+            } else if (isDrawing) {
+                if (currentTool !== 'fill' && currentTool !== 'picker') {
+                    handleToolAction(e, false);
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDrawing) {
+                isDrawing = false;
+                if (currentTool === 'pen' || currentTool === 'eraser') {
+                    saveState();
+                }
+            }
+            isPanning = false;
+        });
+
+        canvasContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomIntensity = 0.15;
+            if (e.deltaY < 0) {
+                scale *= (1 + zoomIntensity);
+            } else {
+                scale /= (1 + zoomIntensity);
+            }
+            scale = Math.max(0.5, Math.min(10, scale));
+            updateTransform();
+        }, { passive: false });
+
+        resetViewBtn.addEventListener('click', resetView);
+
+        function setActiveTool(toolName) {
+            currentTool = toolName;
+            penBtn.classList.remove('active-tool');
+            eraserBtn.classList.remove('active-tool');
+            fillBtn.classList.remove('active-tool');
+            pickerBtn.classList.remove('active-tool');
+
+            if (toolName === 'pen') penBtn.classList.add('active-tool');
+            if (toolName === 'eraser') eraserBtn.classList.add('active-tool');
+            if (toolName === 'fill') fillBtn.classList.add('active-tool');
+            if (toolName === 'picker') pickerBtn.classList.add('active-tool');
+
+            // ツール切り替え時にサイズボタンの見た目を現在のツールに合わせる
+            updateSizeButtonsUI();
+        }
+
+        function setBrushSize(size) {
+            if (currentTool === 'pen' || currentTool === 'fill' || currentTool === 'picker') {
+                penSize = size;
+            } else if (currentTool === 'eraser') {
+                eraserSize = size;
+            }
+            updateSizeButtonsUI();
+        }
+
+        function updateSizeButtonsUI() {
+            const activeSize = (currentTool === 'eraser') ? eraserSize : penSize;
+
+            size1Btn.classList.remove('active-size');
+            size2Btn.classList.remove('active-size');
+            size4Btn.classList.remove('active-size');
+            size8Btn.classList.remove('active-size');
+            size16Btn.classList.remove('active-size');
+
+            if (activeSize === 1) size1Btn.classList.add('active-size');
+            if (activeSize === 2) size2Btn.classList.add('active-size');
+            if (activeSize === 4) size4Btn.classList.add('active-size');
+            if (activeSize === 8) size8Btn.classList.add('active-size');
+            if (activeSize === 16) size16Btn.classList.add('active-size');
+        }
+
+        penBtn.addEventListener('click', () => setActiveTool('pen'));
+        eraserBtn.addEventListener('click', () => setActiveTool('eraser'));
+        fillBtn.addEventListener('click', () => setActiveTool('fill'));
+        pickerBtn.addEventListener('click', () => setActiveTool('picker'));
+
+        size1Btn.addEventListener('click', () => setBrushSize(1));
+        size2Btn.addEventListener('click', () => setBrushSize(2));
+        size4Btn.addEventListener('click', () => setBrushSize(4));
+        size8Btn.addEventListener('click', () => setBrushSize(8));
+        size16Btn.addEventListener('click', () => setBrushSize(16));
+
+        undoBtn.addEventListener('click', () => {
+            if (historyStep > 0) {
+                historyStep--;
+                layers = history[historyStep].map(l => ({
+                    id: l.id,
+                    name: l.name,
+                    visible: l.visible,
+                    data: l.data.map(row => [...row])
+                }));
+                updateLayerUI();
+                draw();
+            }
+        });
+
+        redoBtn.addEventListener('click', () => {
+            if (historyStep < history.length - 1) {
+                historyStep++;
+                layers = history[historyStep].map(l => ({
+                    id: l.id,
+                    name: l.name,
+                    visible: l.visible,
+                    data: l.data.map(row => [...row])
+                }));
+                updateLayerUI();
+                draw();
+            }
+        });
+
+        loadImgBtn.addEventListener('click', () => imageLoader.click());
+        imageLoader.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = resolution;
+                    tempCanvas.height = resolution;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(img, 0, 0, resolution, resolution);
+                    const imgData = tempCtx.getImageData(0, 0, resolution, resolution).data;
+
+                    const newGrid = createEmptyGrid();
+                    for (let y = 0; y < resolution; y++) {
+                        for (let x = 0; x < resolution; x++) {
+                            const index = (y * resolution + x) * 4;
+                            const r = imgData[index];
+                            const g = imgData[index + 1];
+                            const b = imgData[index + 2];
+                            const a = imgData[index + 3];
+
+                            if (a > 50) {
+                                const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+                                newGrid[y][x] = hex;
+                            }
+                        }
+                    }
+                    layers[activeLayerIndex].data = newGrid;
+                    saveState();
+                    draw();
+                    imageLoader.value = "";
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        addLayerBtn.addEventListener('click', () => {
+            if (layers.length >= MAX_LAYERS) {
+                alert('レイヤーは最大10枚までだよ！');
+                return;
+            }
+            const newId = layers.length + 1;
+            layers.push({
+                id: newId,
+                name: `レイヤー ${newId}`,
+                visible: true,
+                data: createEmptyGrid()
+            });
+            activeLayerIndex = layers.length - 1;
+            updateLayerUI();
+            saveState();
+            draw();
+        });
+
+        clearBtn.addEventListener('click', () => {
+            if (confirm(`「${layers[activeLayerIndex].name}」の中身をぜんぶ消しちゃうけどいい？`)) {
+                layers[activeLayerIndex].data = createEmptyGrid();
+                saveState();
+                draw();
+            }
+        });
+
+        saveBtn.addEventListener('click', () => {
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = 512;
+            exportCanvas.height = 512;
+            const expCtx = exportCanvas.getContext('2d');
+            
+            expCtx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
+            const expSize = 512 / resolution;
+
+            layers.forEach(layer => {
+                if (!layer.visible) return;
+                for (let y = 0; y < resolution; y++) {
+                    for (let x = 0; x < resolution; x++) {
+                        const color = layer.data[y][x];
+                        if (color !== null) {
+                            expCtx.fillStyle = color;
+                            expCtx.fillRect(x * expSize, y * expSize, expSize, expSize);
+                        }
+                    }
+                }
+            });
+
             const link = document.createElement('a');
-            link.download = 'my-drawing.png';
-            link.href = canvas.toDataURL();
+            link.download = 'dot_art.png';
+            link.href = exportCanvas.toDataURL('image/png');
             link.click();
-        }
+        });
 
-        // 初期背景を白に
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        initProject();
+    </script>
+    
+    <script>
+        let count = localStorage.getItem('pixel_maker_visits');
+        if (!count) {
+            count = 120; 
+        } else {
+            count = parseInt(count) + 1;
+        }
+        localStorage.setItem('pixel_maker_visits', count);
+        
+        document.getElementById('visitor-count').innerText = String(count).padStart(5, '0');
     </script>
 </body>
 </html>
