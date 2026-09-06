@@ -67,7 +67,7 @@
             background-color: #ffffff;
             overflow: hidden;
             cursor: crosshair;
-            touch-action: none; /* スマホでのスクロール暴発を防ぐ */
+            touch-action: none;
         }
 
         canvas {
@@ -300,6 +300,16 @@
         <span>人め 🎀</span>
     </div>
 
+    <!-- スマホ用保存モーダル -->
+    <div id="saveModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; flex-direction:column; padding:20px; box-sizing:border-box;">
+        <div style="background:#fff; padding:20px; border-radius:10px; max-width:400px; width:100%; text-align:center;">
+            <h3 style="margin-top:0; color:#333;">画像ができたよ！</h3>
+            <p style="font-size:12px; color:#666;">下の画像を長押しして「写真に追加」や「画像を保存」してね！</p>
+            <img id="modalImage" src="" alt="保存画像" style="width:100%; border:2px solid #ccc; image-rendering:pixelated; margin-bottom:15px;">
+            <button id="closeModalBtn" style="background:#e53e3e; width:100%; padding:10px; font-size:14px; font-weight:bold;">とじる</button>
+        </div>
+    </div>
+
     <script>
         const canvasContainer = document.getElementById('canvasContainer');
         const canvas = document.getElementById('canvas');
@@ -337,6 +347,10 @@
         const shiftLeftBtn = document.getElementById('shiftLeftBtn');
         const shiftRightBtn = document.getElementById('shiftRightBtn');
 
+        const saveModal = document.getElementById('saveModal');
+        const modalImage = document.getElementById('modalImage');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
         let resolution = 128;
         const baseSize = 512;  
         let tileSize = baseSize / resolution;
@@ -354,7 +368,6 @@
         let startX = 0;
         let startY = 0;
 
-        // タッチ操作用変数
         let initialPinchDistance = null;
 
         let layers = [];
@@ -713,16 +726,14 @@
             isPanning = false;
         });
 
-        // --- タッチイベント（スマホ・タブレット対応） ---
+        // --- タッチイベント ---
         canvasContainer.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
-                // 1本指：お絵描き（または各種ツール）
                 isDrawing = true;
                 const touch = e.touches[0];
                 handleActionAt(touch.clientX, touch.clientY, true);
                 e.preventDefault();
             } else if (e.touches.length === 2) {
-                // 2本指：ピンチズームの準備 / パン移動の準備
                 isDrawing = false;
                 isPanning = true;
                 initialPinchDistance = Math.hypot(
@@ -743,7 +754,6 @@
                 }
                 e.preventDefault();
             } else if (e.touches.length === 2 && isPanning) {
-                // 2本指での移動＆ピンチインアウト
                 const currentDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
@@ -751,7 +761,7 @@
 
                 if (initialPinchDistance) {
                     const zoomFactor = currentDist / initialPinchDistance;
-                    let newScale = scale * (zoomFactor > 1 ? 1.03 : 0.97); // 緩やかに拡大縮小
+                    let newScale = scale * (zoomFactor > 1 ? 1.03 : 0.97);
                     scale = Math.max(0.5, Math.min(10, newScale));
                 }
 
@@ -933,7 +943,8 @@
         });
 
         clearBtn.addEventListener('click', () => {
-            if (confirm(`「${layers[activeLayerIndex].name}」の中身をぜんぶ消しちゃうけどいい？`)) {
+            // スマホでも確実に出るようにwindow.confirmを安全に呼び出し
+            if (window.confirm(`「${layers[activeLayerIndex].name}」の中身をぜんぶ消しちゃうけどいい？`)) {
                 layers[activeLayerIndex].data = createEmptyGrid(resolution);
                 saveState();
                 draw();
@@ -962,10 +973,22 @@
                 }
             });
 
+            const dataUrl = exportCanvas.toDataURL('image/png');
+
+            // スマホ（iOS/Android）の場合は長押し保存しやすいように専用モーダルを表示する
+            // PCの場合はそのままダウンロードも試みる
+            modalImage.src = dataUrl;
+            saveModal.style.display = 'flex';
+
+            // PC向けの自動ダウンロードも一応並行して走らせる
             const link = document.createElement('a');
             link.download = `dot_art_${resolution}x${resolution}.png`;
-            link.href = exportCanvas.toDataURL('image/png');
+            link.href = dataUrl;
             link.click();
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            saveModal.style.display = 'none';
         });
 
         initProject();
